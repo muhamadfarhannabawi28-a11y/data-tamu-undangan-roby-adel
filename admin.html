@@ -1,1 +1,311 @@
-<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dashboard Admin — Roby & Adel</title><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="css/style.css"></head><body><nav class="top"><a href="index.html">Roby <i>&</i> Adel</a><div><a href="index.html">Lihat Website ↗</a><button id="logoutButton" class="outline">Keluar</button></div></nav><main class="container admin"><section class="intro"><p class="eyebrow">PANEL PENGELOLAAN</p><h2>Dashboard Admin</h2><p>Kelola data tamu undangan Roby & Adel.</p></section><section class="stats"><article><span>Total Tamu</span><strong id="totalGuests">—</strong></article><article><span>Total Nominal</span><strong id="totalNominal">—</strong></article><article><span>Total Beras</span><strong id="totalRice">—</strong></article></section><section class="panel"><p class="eyebrow">FORMULIR DATA</p><h2 id="formTitle">Tambah Tamu</h2><form id="guestForm" class="guest-form"><input id="guestId" type="hidden"><label>Nama tamu<input id="guestName" maxlength="160" required></label><label>Alamat<input id="guestAddress" maxlength="300" required></label><label>Nominal (Rp)<input id="guestNominal" type="number" min="0" step="1" required></label><label>Beras (liter) · Opsional<input id="guestRice" type="number" min="0" step="0.1" placeholder="Kosongkan jika tidak ada"></label><div class="actions"><button id="saveButton" class="primary">Simpan Data</button><button id="cancelEdit" type="button" class="outline" hidden>Batal Edit</button></div><p id="formMessage" class="message"></p></form></section><section class="panel"><div class="panel-head"><h2>Semua Data Tamu</h2><small id="recordCount"></small></div><input id="searchInput" class="search" placeholder="Cari nama atau alamat…" type="search"><div class="table-wrap"><table><thead><tr><th>No.</th><th>Nama</th><th>Alamat</th><th>Nominal</th><th>Beras</th><th>Aksi</th></tr></thead><tbody id="guestRows"></tbody></table></div></section><footer>Data tersimpan di Supabase · Roby & Adel</footer></main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/config.js"></script><script src="js/admin.js"></script></body></html>
+
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Dashboard Admin — Roby & Adel</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
+
+    <!-- CSS Utama -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <!-- ==================================
+         NAVBAR
+    =================================== -->
+
+    <nav class="top">
+
+        <a href="index.html">
+            Roby <i>&</i> Adel
+        </a>
+
+        <div>
+            <a href="index.html">
+                Lihat Website ↗
+            </a>
+
+            <button id="logoutButton" class="outline">
+                Keluar
+            </button>
+        </div>
+
+    </nav>
+
+
+    <main class="container admin">
+
+        <!-- ==================================
+             INTRO DASHBOARD
+        =================================== -->
+
+        <section class="intro">
+
+            <p class="eyebrow">
+                PANEL PENGELOLAAN
+            </p>
+
+            <h2>Dashboard Admin</h2>
+
+            <p>
+                Kelola data tamu undangan Roby & Adel.
+            </p>
+
+        </section>
+
+
+        <!-- ==================================
+             STATISTIK
+        =================================== -->
+
+        <section class="stats">
+
+            <article>
+                <span>Total Tamu</span>
+                <strong id="totalGuests">—</strong>
+            </article>
+
+            <article>
+                <span>Total Nominal</span>
+                <strong id="totalNominal">—</strong>
+            </article>
+
+            <article>
+                <span>Total Beras</span>
+                <strong id="totalRice">—</strong>
+            </article>
+
+        </section>
+
+
+        <!-- ==================================
+             FORM TAMBAH DAN EDIT TAMU
+        =================================== -->
+
+        <section class="panel">
+
+            <p class="eyebrow">
+                FORMULIR DATA
+            </p>
+
+            <h2 id="formTitle">
+                Tambah Tamu
+            </h2>
+
+            <form id="guestForm" class="guest-form">
+
+                <input
+                    id="guestId"
+                    type="hidden"
+                >
+
+                <label>
+                    Nama tamu
+
+                    <input
+                        id="guestName"
+                        maxlength="160"
+                        required
+                    >
+                </label>
+
+
+                <label>
+                    Alamat
+
+                    <input
+                        id="guestAddress"
+                        maxlength="300"
+                        required
+                    >
+                </label>
+
+
+                <label>
+                    Nominal (Rp)
+
+                    <input
+                        id="guestNominal"
+                        type="number"
+                        min="0"
+                        step="1"
+                        required
+                    >
+                </label>
+
+
+                <label>
+                    Beras (liter) · Opsional
+
+                    <input
+                        id="guestRice"
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        placeholder="Kosongkan jika tidak ada"
+                    >
+                </label>
+
+
+                <div class="actions">
+
+                    <button
+                        id="saveButton"
+                        class="primary"
+                        type="submit"
+                    >
+                        Simpan Data
+                    </button>
+
+
+                    <button
+                        id="cancelEdit"
+                        type="button"
+                        class="outline"
+                        hidden
+                    >
+                        Batal Edit
+                    </button>
+
+                </div>
+
+
+                <p
+                    id="formMessage"
+                    class="message"
+                ></p>
+
+            </form>
+
+        </section>
+
+
+        <!-- ==================================
+             DAFTAR DATA TAMU
+        =================================== -->
+
+        <section class="panel">
+
+            <div class="panel-head">
+
+                <h2>Semua Data Tamu</h2>
+
+                <div style="
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    flex-wrap: wrap;
+                ">
+
+                    <small id="recordCount"></small>
+
+                    <!-- TOMBOL DOWNLOAD PDF -->
+                    <button
+                        id="downloadPDF"
+                        type="button"
+                        class="primary"
+                    >
+                        ↓ Download PDF
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- PENCARIAN DATA -->
+
+            <input
+                id="searchInput"
+                class="search"
+                placeholder="Cari nama atau alamat…"
+                type="search"
+            >
+
+
+            <!-- TABEL DATA TAMU -->
+
+            <div class="table-wrap">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+                            <th>No.</th>
+                            <th>Nama</th>
+                            <th>Alamat</th>
+                            <th>Nominal</th>
+                            <th>Beras</th>
+                            <th>Aksi</th>
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody id="guestRows">
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+
+        <!-- ==================================
+             FOOTER
+        =================================== -->
+
+        <footer>
+            Data tersimpan di Supabase · Roby & Adel
+        </footer>
+
+    </main>
+
+
+    <!-- ==================================
+         LIBRARY SUPABASE
+    =================================== -->
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+
+    <!-- ==================================
+         LIBRARY jsPDF
+    =================================== -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+
+    <!-- ==================================
+         LIBRARY AUTOTABLE
+    =================================== -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
+
+
+    <!-- ==================================
+         KONFIGURASI SUPABASE
+    =================================== -->
+
+    <script src="js/config.js"></script>
+
+
+    <!-- ==================================
+         JAVASCRIPT ADMIN
+    =================================== -->
+
+    <script src="js/admin.js"></script>
+
+</body>
+
+</html>

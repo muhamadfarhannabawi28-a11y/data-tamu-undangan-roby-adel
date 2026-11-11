@@ -64,7 +64,6 @@ async function guard() {
 
 // ========================================
 // MEMUAT DATA TAMU
-// Tidak menggunakan created_at
 // ========================================
 
 async function load() {
@@ -79,15 +78,12 @@ async function load() {
 
     guests = data || [];
 
-    // Total jumlah tamu
     $("totalGuests").textContent = fmt(guests.length);
 
-    // Total nominal uang
     $("totalNominal").textContent = money(
         guests.reduce((s, g) => s + Number(g.nominal || 0), 0)
     );
 
-    // Total beras
     $("totalRice").textContent =
         fmt(guests.reduce((s, g) => s + Number(g.beras_liter || 0), 0)) + " L";
 
@@ -146,7 +142,6 @@ function reset() {
 
 // ========================================
 // TAMBAH DAN EDIT DATA TAMU
-// Tidak menggunakan updated_at
 // ========================================
 
 $("guestForm").addEventListener("submit", async e => {
@@ -163,7 +158,6 @@ $("guestForm").addEventListener("submit", async e => {
             : Number($("guestRice").value)
     };
 
-    // Validasi data
     if (
         !payload.nama ||
         !payload.alamat ||
@@ -186,13 +180,11 @@ $("guestForm").addEventListener("submit", async e => {
     let result;
 
     if (id) {
-        // Edit data
         result = await window.db
             .from("tamu_undangan")
             .update(payload)
             .eq("id", id);
     } else {
-        // Tambah data
         result = await window.db
             .from("tamu_undangan")
             .insert(payload);
@@ -221,10 +213,7 @@ $("guestForm").addEventListener("submit", async e => {
 
 $("guestRows").addEventListener("click", async e => {
 
-    // Tombol EDIT
     const editButton = e.target.closest("[data-edit]");
-
-    // Tombol HAPUS
     const deleteButton = e.target.closest("[data-del]");
 
     if (editButton) {
@@ -273,6 +262,241 @@ $("guestRows").addEventListener("click", async e => {
         }
     }
 });
+
+// ========================================
+// DOWNLOAD DATA TAMU DALAM FORMAT PDF
+// ========================================
+
+async function downloadPDF() {
+
+    const button = $("downloadPDF");
+
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+        alert("Library PDF belum berhasil dimuat. Periksa koneksi internet lalu muat ulang halaman.");
+        return;
+    }
+
+    button.disabled = true;
+    button.textContent = "Menyiapkan PDF...";
+
+    try {
+
+        // Ambil seluruh data terbaru dari Supabase
+        const { data, error } = await window.db
+            .from("tamu_undangan")
+            .select("*");
+
+        if (error) {
+            throw new Error(error.message);
+        }
+
+        const allGuests = data || [];
+
+        if (allGuests.length === 0) {
+            alert("Belum ada data tamu untuk diunduh.");
+            return;
+        }
+
+        // Membuat dokumen PDF A4
+        const { jsPDF } = window.jspdf;
+
+        const doc = new jsPDF({
+            orientation: "landscape",
+            unit: "mm",
+            format: "a4"
+        });
+
+        // Judul dokumen
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(18);
+
+        doc.text(
+            "DATA TAMU UNDANGAN",
+            148.5,
+            18,
+            { align: "center" }
+        );
+
+        doc.setFontSize(15);
+
+        doc.text(
+            "ROBY & ADEL",
+            148.5,
+            26,
+            { align: "center" }
+        );
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+
+        doc.text(
+            "Daftar Data Tamu Pernikahan",
+            148.5,
+            33,
+            { align: "center" }
+        );
+
+        // Garis pemisah
+        doc.setDrawColor(190, 160, 110);
+        doc.line(14, 38, 283, 38);
+
+        // Menyiapkan isi tabel
+        const rows = allGuests.map((g, i) => [
+            i + 1,
+            g.nama || "-",
+            g.alamat || "-",
+            money(g.nominal),
+            g.beras_liter == null
+                ? "-"
+                : fmt(g.beras_liter) + " Liter"
+        ]);
+
+        // Membuat tabel otomatis
+        doc.autoTable({
+            startY: 44,
+
+            head: [[
+                "No.",
+                "Nama Tamu",
+                "Alamat",
+                "Nominal",
+                "Beras"
+            ]],
+
+            body: rows,
+
+            theme: "grid",
+
+            styles: {
+                font: "helvetica",
+                fontSize: 9,
+                cellPadding: 3,
+                valign: "middle",
+                overflow: "linebreak"
+            },
+
+            headStyles: {
+                fillColor: [139, 111, 71],
+                textColor: [255, 255, 255],
+                fontStyle: "bold",
+                halign: "center"
+            },
+
+            columnStyles: {
+                0: { cellWidth: 15, halign: "center" },
+                1: { cellWidth: 55 },
+                2: { cellWidth: 105 },
+                3: { cellWidth: 55, halign: "right" },
+                4: { cellWidth: 35, halign: "center" }
+            },
+
+            alternateRowStyles: {
+                fillColor: [250, 247, 241]
+            },
+
+            margin: {
+                left: 14,
+                right: 14,
+                bottom: 25
+            },
+
+            didDrawPage: function () {
+                const pageHeight = doc.internal.pageSize.height;
+                const pageWidth = doc.internal.pageSize.width;
+
+                doc.setFontSize(8);
+                doc.setFont("helvetica", "normal");
+
+                doc.text(
+                    "Roby & Adel - Data Tamu Undangan",
+                    14,
+                    pageHeight - 10
+                );
+
+                doc.text(
+                    "Halaman " + doc.internal.getNumberOfPages(),
+                    pageWidth - 14,
+                    pageHeight - 10,
+                    { align: "right" }
+                );
+            }
+        });
+
+        // Menghitung total
+        const totalGuests = allGuests.length;
+
+        const totalNominal = allGuests.reduce(
+            (s, g) => s + Number(g.nominal || 0),
+            0
+        );
+
+        const totalRice = allGuests.reduce(
+            (s, g) => s + Number(g.beras_liter || 0),
+            0
+        );
+
+        // Ringkasan di bawah tabel
+        let finalY = doc.lastAutoTable.finalY + 10;
+
+        // Jika ringkasan tidak muat, buat halaman baru
+        if (finalY > 175) {
+            doc.addPage();
+            finalY = 20;
+        }
+
+        doc.setDrawColor(190, 160, 110);
+        doc.line(14, finalY, 283, finalY);
+
+        finalY += 8;
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+
+        doc.text("RINGKASAN DATA", 14, finalY);
+
+        finalY += 8;
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+
+        doc.text(
+            "Total Tamu: " + fmt(totalGuests),
+            14,
+            finalY
+        );
+
+        doc.text(
+            "Total Nominal: " + money(totalNominal),
+            100,
+            finalY
+        );
+
+        doc.text(
+            "Total Beras: " + fmt(totalRice) + " Liter",
+            210,
+            finalY
+        );
+
+        // Unduh PDF
+        doc.save("Data-Tamu-Roby-Adel.pdf");
+
+    } catch (error) {
+
+        alert("Gagal membuat PDF: " + error.message);
+
+    } finally {
+
+        button.disabled = false;
+        button.textContent = "↓ Download PDF";
+
+    }
+}
+
+// ========================================
+// TOMBOL DOWNLOAD PDF
+// ========================================
+
+$("downloadPDF").addEventListener("click", downloadPDF);
 
 // ========================================
 // TOMBOL BATAL EDIT
